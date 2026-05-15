@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+    <meta charset="UTF-8">
+    <title>易經交互式手冊 - 暗黑優化版</title>
+    <style>
+        :root {
+            /* 淺色模式變量 */
+            --iching-red: #bc2b1a; 
+            --tag-bg: #5a5a5a;
+            --bg-color: #f9f6f2;
+            --container-bg: #ffffff;
+            --text-main: #333333;
+            --text-secondary: #666666;
+            --border-color: #d1c7b7;
+            --card-bg: #fdfaf5;
+        }
+
+        /* 感應系統暗黑模式或插件 */
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --iching-red: #a32216; /* 深色背景下略微調暗紅色，不刺眼 */
+                --tag-bg: #3d3d3d;
+                --bg-color: #121212; /* 純深色背景 */
+                --container-bg: #1e1e1e; /* 容器背景 */
+                --text-main: #e0e0e0;
+                --text-secondary: #b0b0b0;
+                --border-color: #444444;
+                --card-bg: #2a2a2a;
+            }
+        }
+
+        body { 
+            font-family: "PingFang TC", "Microsoft JhengHei", serif; 
+            background: var(--bg-color); 
+            margin: 0; 
+            padding: 20px; 
+            color: var(--text-main); 
+            display: flex; 
+            justify-content: center;
+            transition: background 0.3s ease;
+        }
+
+        .app-container { 
+            width: 100%; 
+            max-width: 1000px; 
+            background: var(--container-bg); 
+            border: 1px solid var(--border-color); 
+            box-shadow: 0 4px 20px rgba(0,0,0,0.2); 
+            padding: 40px; 
+            transition: all 0.3s ease;
+        }
+        
+        .top-header { border-bottom: 2px solid var(--iching-red); margin-bottom: 30px; padding-bottom: 10px; }
+        .top-header h1 { color: var(--iching-red); margin: 0; font-size: 2.4em; border-left: 8px solid var(--iching-red); padding-left: 20px; }
+
+        .summary-box { display: flex; flex-direction: column; align-items: center; gap: 15px; margin-bottom: 30px; }
+        .summary-item { 
+            width: 100%; 
+            max-width: 750px; 
+            background: var(--card-bg); 
+            padding: 12px 20px; 
+            border: 1px solid var(--border-color); 
+            border-radius: 4px; 
+            display: flex; 
+            align-items: baseline; 
+        }
+        .label { font-weight: bold; color: var(--iching-red); min-width: 80px; flex-shrink: 0; }
+        .content { line-height: 1.6; color: var(--text-main); }
+
+        .main-content { display: flex; gap: 50px; align-items: flex-start; border-top: 1px solid var(--border-color); padding-top: 30px; }
+
+        /* 左側卦象 */
+        .gua-visual { display: flex; flex-direction: column-reverse; align-items: center; min-width: 320px; padding: 10px; }
+        .line-wrapper { display: flex; align-items: center; width: 100%; margin: 10px 0; cursor: pointer; }
+        
+        .line-label { 
+            width: 50px; height: 32px; 
+            background: var(--tag-bg); 
+            color: #ffffff; 
+            font-size: 13px; 
+            display: flex; align-items: center; justify-content: center; 
+            border-radius: 4px 0 0 4px; margin-right: 10px; font-weight: bold;
+        }
+
+        .line-body { flex: 1; height: 32px; display: flex; transition: 0.2s; }
+        .line-wrapper:hover .line-body { opacity: 0.8; transform: scaleX(1.02); }
+        
+        .yang { background: var(--iching-red); }
+        .yin { display: flex; justify-content: space-between; background: transparent; }
+        .yin span { background: var(--iching-red); flex: 1; height: 100%; }
+        .yin .gap { width: 15%; background: transparent; } /* 這裡會自動透明，顯示背景的黑色 */
+
+        /* 右側爻辭 */
+        .yaoci-section { flex: 1; }
+        .yao-card { margin-bottom: 25px; padding-left: 15px; border-left: 4px solid var(--border-color); }
+        .yao-card:hover { border-left-color: var(--iching-red); background: rgba(188, 43, 26, 0.05); }
+        .yao-title { font-weight: bold; font-size: 1.2em; color: var(--text-main); margin-bottom: 6px; }
+        .xiaoxiang { color: var(--text-secondary); font-size: 0.95em; font-style: italic; }
+        .red-tag { color: var(--iching-red); font-weight: bold; margin-bottom: 15px; display: block; font-size: 1.1em; }
+    </style>
+</head>
+<body>
+
+<div class="app-container">
+    <div class="top-header">
+        <h1 id="guaName">加載中...</h1>
+    </div>
+
+    <div class="summary-box">
+        <div class="summary-item"><span class="label">【卦辭】</span><div id="guaci" class="content"></div></div>
+        <div class="summary-item"><span class="label">【彖傳】</span><div id="tuan" class="content"></div></div>
+        <div class="summary-item"><span class="label">【大象】</span><div id="daxiang" class="content"></div></div>
+    </div>
+
+    <div class="main-content">
+        <div class="gua-visual" id="guaContainer"></div>
+        <div class="yaoci-section">
+            <span class="red-tag">【爻辭與小象】</span>
+            <div id="yaociList"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // 這裡放入你之前的 64 卦數據 (乾、坤、屯等)
+    const hexagramData = {
+        "111111": { 
+            name: "乾為天", 
+            guaci: "元亨利貞。", 
+            tuan: "大哉乾元，萬物資始，乃統天。雲行雨施，品物流行。", 
+            daxiang: "天行健，君子以自強不息。",
+            yaoci: [
+                { text: "初九：潛龍勿用。", xiang: "潛龍勿用，陽在下也。" },
+                { text: "九二：見龍在田，利見大人。", xiang: "見龍在田，德施普也。" },
+                { text: "九三：君子終日乾乾，夕惕若，厲無咎。", xiang: "終日乾乾，反復道也。" },
+                { text: "九四：或躍在淵，無咎。", xiang: "或躍在淵，進無咎也。" },
+                { text: "九五：飛龍在天，利見大人。", xiang: "飛龍在天，大人造也。" },
+                { text: "上九：亢龍有悔。", xiang: "亢龍有悔，盈不可久也。" }
+            ]
+        },
+        "000000": { 
+            name: "坤為地", 
+            guaci: "元亨，利牝馬之貞。君子有攸往，先迷後得主，利西南得朋，東北喪朋。安貞吉。", 
+            tuan: "至哉坤元，萬物資生，乃順承天。坤厚載物，德合無疆。", 
+            daxiang: "地勢坤，君子以厚德載物。",
+            yaoci: [
+                { text: "初六：履霜，堅冰至。", xiang: "履霜堅冰，陰始凝也。馴致其道，至堅冰也。" },
+                { text: "六二：直方大，不習無不利。", xiang: "六二之動，直以方也。不習無不利，地道光也。" },
+                { text: "六三：含章可貞。或從王事，無成有終。", xiang: "含章可貞，以時發也。或從王事，知光大也。" },
+                { text: "六四：括囊，無咎無譽。", xiang: "括囊無咎，慎不害也。" },
+                { text: "六五：黃裳，元吉。", xiang: "黃裳元吉，文在中也。" },
+                { text: "上六：龍戰於野，其血玄黃。", xiang: "龍戰於野，其道窮也。" }
+            ]
+        }
+    };
+
+    let currentState = [0, 0, 0, 0, 0, 0]; 
+    const yaoNames = ["初爻", "二爻", "三爻", "四爻", "五爻", "上爻"];
+
+    function render() {
+        const key = currentState.join('');
+        const data = hexagramData[key] || { name: "數據待填充", guaci: "...", tuan: "...", daxiang: "...", yaoci: [] };
+        const container = document.getElementById('guaContainer');
+        container.innerHTML = '';
+        
+        currentState.forEach((bit, index) => {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'line-wrapper';
+            const label = document.createElement('div');
+            label.className = 'line-label';
+            label.innerText = yaoNames[index];
+            const body = document.createElement('div');
+            body.className = `line-body ${bit === 1 ? 'yang' : 'yin'}`;
+            if (bit === 0) {
+                body.innerHTML = '<span></span><div class="gap"></div><span></span>';
+            }
+            wrapper.appendChild(label);
+            wrapper.appendChild(body);
+            wrapper.onclick = () => {
+                currentState[index] = currentState[index] === 1 ? 0 : 1;
+                render();
+            };
+            container.appendChild(wrapper);
+        });
+
+        document.getElementById('guaName').innerText = data.name;
+        document.getElementById('guaci').innerText = data.guaci;
+        document.getElementById('tuan').innerText = data.tuan;
+        document.getElementById('daxiang').innerText = data.daxiang;
+
+        const yaociList = document.getElementById('yaociList');
+        yaociList.innerHTML = data.yaoci.map(yao => `
+            <div class="yao-card">
+                <div class="yao-title">${yao.text}</div>
+                <div class="xiaoxiang">小象曰：${yao.xiang}</div>
+            </div>
+        `).join('');
+    }
+    render();
+</script>
+
+</body>
+</html>
