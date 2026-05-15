@@ -1,0 +1,106 @@
+import React, { useState } from "react";
+
+export default function YijingApp() {
+  const hexagrams = {
+    "111111": {
+      name: "乾卦",
+      guaci: "元亨利贞。",
+      tuan: "大哉乾元，万物资始，乃统天。",
+      yaoci: [
+        { text: "初九：潜龙勿用。", xiang: "潜龙勿用，德行潜藏。" },
+        { text: "九二：见龙在田，利见大人。", xiang: "龙在田，君子宜行正道。" },
+        { text: "九三：君子终日乾乾，夕惕若，厉无咎。", xiang: "终日乾乾，戒慎不懈。" },
+        { text: "九四：或跃在渊，无咎。", xiang: "或跃在渊，行动适时。" },
+        { text: "九五：飞龙在天，利见大人。", xiang: "飞龙在天，德行显扬。" },
+        { text: "上九：亢龙有悔。", xiang: "亢龙有悔，过高必失。" }
+      ]
+    },
+    "000000": {
+      name: "坤卦",
+      guaci: "元亨，利牝马之贞。",
+      tuan: "至哉坤元，万物资生，乃顺承天。",
+      yaoci: [
+        { text: "初六：履霜，坚冰至。", xiang: "谨慎如履霜，必守德行。" },
+        { text: "六二：直方大，不习无不利。", xiang: "正直坦荡，顺应时势。" },
+        { text: "六三：含章可贞。或从王事，无成有终。", xiang: "内含德行，随顺而行。" },
+        { text: "六四：括囊，无咎无誉。", xiang: "收敛内守，不求名利。" },
+        { text: "六五：黄裳，元吉。", xiang: "恪守中道，吉祥如意。" },
+        { text: "上六：龙战于野，其血玄黄。", xiang: "虽有争斗，仍需顺天行事。" }
+      ]
+    }
+  };
+
+  const defaultHexagram = [1, 1, 1, 1, 1, 1];
+  const [lines, setLines] = useState(defaultHexagram);
+
+  const toggleLine = (index) => {
+    const newLines = [...lines];
+    newLines[index] = newLines[index] === 1 ? 0 : 1;
+    setLines(newLines);
+  };
+
+  const hexKey = lines.join("");
+  const hex = hexagrams[hexKey] || {
+    name: "未录入卦象",
+    guaci: "请继续补全64卦数据。",
+    tuan: "暂无彖传。",
+    yaoci: Array(6).fill({ text: "暂无爻辞", xiang: "暂无象传" })
+  };
+
+  const renderLine = (line, index) => {
+    const yao = hex.yaoci[index];
+    return (
+      <div key={index} className="flex items-center my-2">
+        {/* 卦爻图左边 */}
+        <div
+          onClick={() => toggleLine(index)}
+          className="cursor-pointer mr-6 flex justify-center items-center w-40"
+        >
+          {line === 1 ? (
+            // 阳爻整条
+            <div className="w-40 h-6 bg-red-700 rounded-full shadow-lg"></div>
+          ) : (
+            // 阴爻两段，总长度一致
+            <div className="flex justify-between w-full">
+              <div className="w-16 h-6 bg-red-700 rounded-full shadow-lg"></div>
+              <div className="w-16 h-6 bg-red-700 rounded-full shadow-lg"></div>
+            </div>
+          )}
+        </div>
+
+        {/* 爻辞 + 象传右边 */}
+        <div>
+          <div className="text-lg text-red-800">{yao.text}</div>
+          <div className="text-sm text-gray-600">{yao.xiang}</div>
+        </div>
+      </div>
+    );
+  };
+
+  return (
+    <div className="min-h-screen bg-yellow-50 p-6 text-gray-900">
+      <div className="max-w-4xl mx-auto bg-white rounded-3xl shadow-2xl p-8 border border-red-100">
+        {/* 卦名 + 卦辞 + 彖传 */}
+        <div className="mb-8 text-center">
+          <h1 className="text-4xl font-bold mb-2 text-red-700">{hex.name}</h1>
+          <p className="text-xl text-red-600 mb-2">{hex.guaci}</p>
+          <p className="text-lg text-gray-700">{hex.tuan}</p>
+        </div>
+
+        {/* 卦象 + 爻辞象传 */}
+        <div className="flex flex-col-reverse">
+          {lines.map((line, index) => renderLine(line, index))}
+        </div>
+
+        <div className="mt-6 text-center">
+          <button
+            onClick={() => setLines(defaultHexagram)}
+            className="px-6 py-3 rounded-2xl bg-red-700 text-white hover:bg-red-800 transition text-lg shadow-lg"
+          >
+            恢复乾卦
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
